@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_00drejr" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Zeebe Modeler" exporterVersion="0.10.0">
+  <bpmn:process id="C4P" name="Call For Proposals" processType="None" isClosed="false" isExecutable="true">
+    <bpmn:exclusiveGateway id="ExclusiveGateway_03j900u">
+      <bpmn:incoming>SequenceFlow_0pwgx33</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0b6z1m2</bpmn:outgoing>
+      <bpmn:outgoing>SequenceFlow_15sra6x</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="ServiceTask_1gkkrk3" name="Send Rejection Via Email" implementation="##WebService">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="email" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0b6z1m2</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_00w6bb1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_0b6z1m2" name="Rejected" sourceRef="ExclusiveGateway_03j900u" targetRef="ServiceTask_1gkkrk3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=proposal.approved = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="ServiceTask_1fb84mt" name="Send Approval Via Email" implementation="##WebService">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="email-with-link" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_15sra6x</bpmn:incoming>
+      <bpmn:outgoing>Flow_1k2ua6w</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_15sra6x" name="Approved" sourceRef="ExclusiveGateway_03j900u" targetRef="ServiceTask_1fb84mt">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=proposal.approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="ServiceTask_1cgvnad" name="Publish to Agenda" implementation="##WebService">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="agenda-publish" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_05924q4</bpmn:incoming>
+      <bpmn:outgoing>Flow_17z3az4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1l8rhpb">
+      <bpmn:incoming>Flow_17z3az4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_0qfa1a5">
+      <bpmn:incoming>SequenceFlow_00w6bb1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_00w6bb1" sourceRef="ServiceTask_1gkkrk3" targetRef="EndEvent_0qfa1a5" />
+    <bpmn:startEvent id="StartEvent_1" name="New Proposal">
+      <bpmn:outgoing>SequenceFlow_0vp94d3</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:receiveTask id="ReceiveTask_1vr126v" name="Decision Made By Org" messageRef="Message_0os211h">
+      <bpmn:incoming>SequenceFlow_0vp94d3</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0pwgx33</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="SequenceFlow_0vp94d3" sourceRef="StartEvent_1" targetRef="ReceiveTask_1vr126v" />
+    <bpmn:sequenceFlow id="SequenceFlow_0pwgx33" sourceRef="ReceiveTask_1vr126v" targetRef="ExclusiveGateway_03j900u" />
+    <bpmn:sequenceFlow id="Flow_1k2ua6w" sourceRef="ServiceTask_1fb84mt" targetRef="Activity_1t9vqbm" />
+    <bpmn:receiveTask id="Activity_1t9vqbm" name="Speaker Confirmation" messageRef="Message_1neaf2v">
+      <bpmn:incoming>Flow_1k2ua6w</bpmn:incoming>
+      <bpmn:outgoing>Flow_05924q4</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="Flow_05924q4" sourceRef="Activity_1t9vqbm" targetRef="ServiceTask_1cgvnad" />
+    <bpmn:sequenceFlow id="Flow_17z3az4" sourceRef="ServiceTask_1cgvnad" targetRef="EndEvent_1l8rhpb" />
+  </bpmn:process>
+  <bpmn:message id="Message_0ffpl9a" />
+  <bpmn:message id="Message_0os211h" name="DecisionMade">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=proposal.id" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_1neaf2v" name="SpeakerConfirmation">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=proposal.id" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="C4P">
+      <bpmndi:BPMNEdge id="SequenceFlow_0pwgx33_di" bpmnElement="SequenceFlow_0pwgx33">
+        <di:waypoint x="332" y="121" />
+        <di:waypoint x="364" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0vp94d3_di" bpmnElement="SequenceFlow_0vp94d3">
+        <di:waypoint x="193" y="121" />
+        <di:waypoint x="232" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_00w6bb1_di" bpmnElement="SequenceFlow_00w6bb1">
+        <di:waypoint x="705" y="121" />
+        <di:waypoint x="744" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_15sra6x_di" bpmnElement="SequenceFlow_15sra6x">
+        <di:waypoint x="389" y="146" />
+        <di:waypoint x="389" y="231" />
+        <di:waypoint x="450" y="231" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="406" y="163" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0b6z1m2_di" bpmnElement="SequenceFlow_0b6z1m2">
+        <di:waypoint x="414" y="121" />
+        <di:waypoint x="605" y="121" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="433" y="103" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1k2ua6w_di" bpmnElement="Flow_1k2ua6w">
+        <di:waypoint x="550" y="231" />
+        <di:waypoint x="605" y="231" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05924q4_di" bpmnElement="Flow_05924q4">
+        <di:waypoint x="705" y="231" />
+        <di:waypoint x="750" y="231" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17z3az4_di" bpmnElement="Flow_17z3az4">
+        <di:waypoint x="850" y="231" />
+        <di:waypoint x="882" y="231" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ExclusiveGateway_03j900u_di" bpmnElement="ExclusiveGateway_03j900u" isMarkerVisible="true">
+        <dc:Bounds x="364" y="96" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_10u6czs_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="157" y="103" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="141" y="146" width="69" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ReceiveTask_1vr126v_di" bpmnElement="ReceiveTask_1vr126v">
+        <dc:Bounds x="232" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1gkkrk3_di" bpmnElement="ServiceTask_1gkkrk3">
+        <dc:Bounds x="605" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1l8rhpb_di" bpmnElement="EndEvent_1l8rhpb">
+        <dc:Bounds x="882" y="213" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0qfa1a5_di" bpmnElement="EndEvent_0qfa1a5">
+        <dc:Bounds x="744" y="103" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1cgvnad_di" bpmnElement="ServiceTask_1cgvnad">
+        <dc:Bounds x="750" y="191" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_08bbptw_di" bpmnElement="Activity_1t9vqbm">
+        <dc:Bounds x="605" y="191" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_1fb84mt_di" bpmnElement="ServiceTask_1fb84mt">
+        <dc:Bounds x="450" y="191" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
